@@ -55,21 +55,130 @@ Use this table to pick the right tool before starting each task. **Skills** are 
 
 ### Phase → Skill/Agent Map
 
-| Phase | Primary Skill | Supporting Agents |
-|-------|--------------|-------------------|
-| 1. Base Setup | manual (no skill) | — |
-| 2. Schema | `/db-migrate` × 10 steps | `@postgres-pro` (design review), `@db-analyst` (index check) |
-| 3. Auth & RBAC | `/tdd-feature` | `@spec-reviewer` after completion |
-| 4. Dashboard | `/tdd-feature` | `@db-analyst` (aggregation queries), `@ui-designer` (charts) |
-| 5. Customer CRM | `/new-feature` | `@ui-designer` (list/detail), `@ux-reviewer` (states), `@spec-reviewer` |
-| 6. Event Management | `/new-feature` | `@ui-designer` (calendar, quotation builder), `@spec-reviewer` |
-| 7. Task Management | `/new-feature` | `@ui-designer` (Kanban), `@ux-reviewer` (drag-and-drop, mobile) |
-| 8. Timesheets | `/tdd-feature` | `@ui-designer` (calendar), `@spec-reviewer` |
-| 9. Cash Flow | `/tdd-feature` | `@db-analyst` (period queries), `@ui-designer` (charts) |
-| 10. HR | `/tdd-feature` | `@ui-designer` (directory), `@spec-reviewer` |
-| 11. Inventory | `/tdd-feature` | `@db-analyst` (allocation atomicity), `@spec-reviewer` |
-| 12. Layout & E2E | `@ui-designer` | `@ux-reviewer` (a11y + mobile), `/vercel-react-best-practices`, `/verification-before-completion`, `@spec-reviewer` → `@quality-reviewer` |
-| 13. Deploy & Archive | `/deploy-to-vercel` | `/finishing-a-development-branch`, `/opsx:archive` |
+| Phase | Primary Skill | Supporting Agents | Figma Make |
+|-------|--------------|-------------------|------------|
+| 0. Design System | Figma MCP | `@ui-designer` | **Generate base layout + design tokens** |
+| 1. Base Setup | manual (no skill) | — | Copy tokens from Figma Make → `globals.css` |
+| 2. Schema | `/db-migrate` × 10 steps | `@postgres-pro` (design review), `@db-analyst` (index check) | — |
+| 3. Auth & RBAC | `/tdd-feature` | `@spec-reviewer` after completion | Read login page frame from Figma Make |
+| 4. Dashboard | `/tdd-feature` | `@db-analyst` (aggregation queries), `@ui-designer` (charts) | Read MetricCard + chart frames |
+| 5. Customer CRM | `/new-feature` | `@ui-designer` (list/detail), `@ux-reviewer` (states), `@spec-reviewer` | Read CustomerList + detail frames |
+| 6. Event Management | `/new-feature` | `@ui-designer` (calendar, quotation builder), `@spec-reviewer` | Read EventCalendar + QuotationBuilder frames |
+| 7. Task Management | `/new-feature` | `@ui-designer` (Kanban), `@ux-reviewer` (drag-and-drop, mobile) | Read KanbanBoard + TaskCard frames |
+| 8. Timesheets | `/tdd-feature` | `@ui-designer` (calendar), `@spec-reviewer` | Read WeeklyCalendar + TimesheetForm frames |
+| 9. Cash Flow | `/tdd-feature` | `@db-analyst` (period queries), `@ui-designer` (charts) | Read CashFlowSummary + chart frames |
+| 10. HR | `/tdd-feature` | `@ui-designer` (directory), `@spec-reviewer` | Read EmployeeDirectory + ContractList frames |
+| 11. Inventory | `/tdd-feature` | `@db-analyst` (allocation atomicity), `@spec-reviewer` | Read PropCatalog + ChecklistView frames |
+| 12. Layout & E2E | `@ui-designer` | `@ux-reviewer` (a11y + mobile), `/vercel-react-best-practices`, `/verification-before-completion`, `@spec-reviewer` → `@quality-reviewer` | Send Code Connect mappings (all components) |
+| 13. Deploy & Archive | `/deploy-to-vercel` | `/finishing-a-development-branch`, `/opsx:archive` | — |
+
+---
+
+## Figma Make Integration
+
+**URL:** `https://www.figma.com/make/DEFShOWS1OFzBB6czy0A4s/HKT-project`
+**File Key:** `DEFShOWS1OFzBB6czy0A4s`
+
+### What's Already in Figma Make
+
+The project ships with a complete foundation — no setup needed:
+
+- **Full shadcn/ui component library** — button, card, table, badge, dialog, sidebar, sheet, skeleton, chart, tabs, form, input, select, dropdown-menu, toast, and 30+ more
+- **Design token system** (`theme.css`):
+  - Primary: `#030213` (near-black), Destructive: `#d4183d`
+  - Muted bg: `#ececf0`, Muted text: `#717182`
+  - Sidebar tokens: full sidebar color system
+  - Chart colors: `--chart-1` through `--chart-5`
+  - Border radius: `0.625rem` base
+  - Typography: 16px base, h1–h4 at `font-weight: 500`
+  - Full `.dark` mode variant
+- **Tailwind v4** configured with `tw-animate-css`
+
+### Standard Figma Make Workflow (every UI phase)
+
+```
+Step 1 — Before writing UI code:
+  Claude MCP: get_design_context(fileKey, nodeId) → read existing frame
+
+Step 2 — Generate the component/page frame in Figma Make:
+  Claude MCP: generate_figma_design → writes design back to Figma Make
+
+Step 3 — Implement code adapted to our stack:
+  Next.js App Router + shadcn/ui + Tailwind v4 (NOT generic React)
+  Reuse existing src/components/ui/ — never duplicate primitives
+
+Step 4 — After implementation (Phase 12 only):
+  Claude MCP: send_code_connect_mappings → links Figma component → codebase file
+```
+
+### Key Rules
+
+- Design tokens from Figma Make `theme.css` are the **single source of truth** for colors, radius, and typography — copy them to `src/app/globals.css` in Phase 1
+- Always adapt Figma Make output to our stack — it generates generic React/Vite, we use Next.js App Router
+- Figma Make frames are **reference designs**, not final code — apply our naming conventions and component structure on top
+- `get_design_context` before `generate_figma_design` — always read before writing
+
+---
+
+## Phase Completion Protocol (Phase 3 onwards)
+
+After every phase from Phase 3, execution **must stop** for user verification before the next phase starts. No exceptions.
+
+### Standard Checkpoint Steps
+
+```
+1. pnpm test                          → all unit tests green
+2. pnpm test:e2e -- --grep "<phase>"  → phase-specific E2E tests green
+3. Playwright MCP browser check       → navigate app, verify key flows visually
+4. ⛔ STOP — wait for user to manually test and say "continue"
+```
+
+### Rules
+
+- **Do NOT start the next phase** until the user explicitly says to continue (e.g. "looks good", "continue", "next phase")
+- If Playwright MCP finds a visual or functional issue, fix it before stopping — don't hand over broken work
+- If a unit test or E2E test fails, fix it before the checkpoint — the stop is for user acceptance testing, not debugging
+- The Playwright MCP browser check is a **live browser session** — navigate to real pages, click real buttons, verify real behavior
+
+---
+
+## Chunk 0: Design System (Phase 0)
+
+---
+
+### Phase 0: Figma Make Base Layout & Design System
+
+**Goal:** Generate the full base layout shell and core UI patterns in Figma Make before writing a single line of application code. This becomes the visual reference for all subsequent phases.
+
+**Why Phase 0 first:** Every UI phase will `get_design_context` from these frames. Building them upfront ensures design consistency across all 10 modules rather than designing piecemeal per phase.
+
+**Tool:** Figma MCP — `generate_figma_design` to write frames, `get_design_context` to verify output
+
+**Frames to generate in Figma Make:**
+
+- [ ] **0.1** **Authentication Shell** — Login page: centered card with email/password form, logo placeholder, error state. Password change dialog.
+
+- [ ] **0.2** **Dashboard Shell** — Full app layout: sidebar nav (expanded + collapsed states), top header bar with user avatar menu, main content area with page title + action button slot. Mobile: hamburger + slide-in sheet.
+
+- [ ] **0.3** **Navigation System** — Sidebar items grouped by section (Overview / Operations / CRM / Finance / HR / Inventory / Admin). Active state, hover state, ADMIN-only section. `UserMenu` dropdown (profile, logout).
+
+- [ ] **0.4** **Core UI Patterns:**
+  - `MetricCard` — label, large VND value, optional trend arrow
+  - `PageHeader` — title + subtitle + right-aligned action buttons
+  - `DataTable` — sortable columns, pagination, row actions dropdown
+  - `StatusBadge` — color-coded for all status enums (PLANNING/CONFIRMED/etc.)
+  - `EmptyState` — illustration slot + heading + subtext + CTA button
+  - `LoadingSkeleton` — matches DataTable and card layouts
+
+- [ ] **0.5** **Form Patterns:**
+  - Standard form layout: label + input + helper text + error state
+  - Dialog form wrapper (title + content + cancel/submit footer)
+  - Date picker usage pattern
+  - Select/dropdown pattern
+
+- [ ] **0.6** Verify all frames are visible in Figma Make. Document any design decisions (colors used, spacing choices) in `guidelines/Guidelines.md` inside the Figma Make project.
+
+**How to test:** Open `https://www.figma.com/make/DEFShOWS1OFzBB6czy0A4s/HKT-project` and confirm all 6 frame groups are visible and match the design token system from `theme.css`.
 
 ---
 
@@ -113,6 +222,8 @@ Use this table to pick the right tool before starting each task. **Skills** are 
 - [ ] **1.6** Install Inngest (`inngest`). Create `src/inngest/client.ts` with the Inngest client using `INNGEST_EVENT_KEY`. Create `src/app/api/inngest/route.ts` as the Inngest serve handler (registers functions — empty array for now). Verify `pnpm dev` still starts cleanly.
 
 - [ ] **1.7** Create `.env.example` documenting all required env vars (see the Environment Variables section at the bottom of this plan). Create `vercel.json` with build settings. Commit: `"chore: base project setup with all dependencies (tasks 1.1–1.7)"`.
+
+- [ ] **1.8 (Figma Make)** Copy the design tokens from Figma Make `theme.css` into `src/app/globals.css`. These CSS variables (`--primary`, `--muted`, `--sidebar`, `--chart-1`…`--chart-5`, `--radius`, etc.) are the single source of truth for all colors, spacing, and typography. Reference via Tailwind utilities (`bg-primary`, `text-muted-foreground`, etc.) — never hardcode hex values.
 
 **How to test:** `pnpm dev` starts without errors, `pnpm build` succeeds, `pnpm test` passes, `/api/trpc` responds.
 
@@ -216,6 +327,13 @@ Use this table to pick the right tool before starting each task. **Skills** are 
 
 **How to test:** Login with seeded admin works, wrong password shows error, `/dashboard` without session redirects to `/login`, all unit tests pass.
 
+> **⏸ PHASE 3 CHECKPOINT — Stop here. Do not start Phase 4.**
+>
+> - [ ] `pnpm test` — all unit tests pass
+> - [ ] `pnpm test:e2e -- --grep "auth"` — auth E2E tests pass
+> - [ ] **Playwright MCP:** Navigate to `http://localhost:3000` → verify redirect to `/login` → login with seeded ADMIN → confirm redirect to `/dashboard` → logout → confirm redirect to `/login` → try wrong password → confirm error shown
+> - [ ] **⛔ Await user approval** — User manually tests login/logout/RBAC. Only continue after explicit confirmation.
+
 ---
 
 ## Chunk 2: Core Business Modules (Phases 4–7)
@@ -271,9 +389,16 @@ Use this table to pick the right tool before starting each task. **Skills** are 
   ```
   Returns `{ metrics, trend, breakdown, isLoading }`.
 
-- [ ] **4.5** Build `src/app/(dashboard)/dashboard/page.tsx`. Renders: period picker (month/year selectors at top), MetricCard × 3 (Revenue / Costs / Net Profit), RevenueTrendChart, EventBreakdownChart. Use `Skeleton` components for loading state. Commit: `"feat: dashboard analytics with 30s auto-refresh (tasks 4.1–4.7)"`.
+- [ ] **4.5 (Figma Make)** Before building the page: use Figma MCP `get_design_context` to read the MetricCard, RevenueTrendChart, and EventBreakdownChart frames generated in Phase 0. Adapt the design context to our stack (shadcn Card + Recharts). Then build `src/app/(dashboard)/dashboard/page.tsx`: period picker (month/year selectors at top), MetricCard × 3 (Revenue / Costs / Net Profit), RevenueTrendChart, EventBreakdownChart. Use `Skeleton` components for loading state. Commit: `"feat: dashboard analytics with 30s auto-refresh (tasks 4.1–4.7)"`.
 
 **How to test:** Dashboard loads, cards show zeros with no data, period selector updates all widgets, network tab shows re-fetches every 30s.
+
+> **⏸ PHASE 4 CHECKPOINT — Stop here. Do not start Phase 5.**
+>
+> - [ ] `pnpm test` — all unit tests pass
+> - [ ] `pnpm test:e2e -- --grep "dashboard"` — dashboard E2E tests pass
+> - [ ] **Playwright MCP:** Navigate to `/dashboard` → confirm 3 MetricCards render → change month/year selector → confirm all 3 cards + both charts update → confirm skeleton shows while loading → wait 30s → confirm network re-fetch fires
+> - [ ] **⛔ Await user approval** — User manually tests dashboard widgets and period selector. Only continue after explicit confirmation.
 
 ---
 
@@ -315,7 +440,14 @@ Use this table to pick the right tool before starting each task. **Skills** are 
 
 - [ ] **5.3** Build `src/app/(dashboard)/customers/page.tsx`: search input (debounced 300ms with `useDebounce` hook), status filter dropdown, assigned-staff filter dropdown (lists users from session-aware query), paginated table (Name, Phone, Company, Status, Created), "Add Customer" button opens dialog with `CustomerForm`.
 
-- [ ] **5.4** Build `src/app/(dashboard)/customers/[id]/page.tsx`: customer info card, `InteractionTimeline` below in reverse chronological order (icon per type, timestamp, notes). "Log Interaction" button opens dialog. Commit: `"feat: customer CRM with interaction history and staff filter (tasks 5.1–5.5)"`.
+- [ ] **5.4 (Figma Make)** Before building: use Figma MCP `get_design_context` to read the CustomerList and CustomerDetail frames from Phase 0. Adapt to our stack. Build `src/app/(dashboard)/customers/[id]/page.tsx`: customer info card, `InteractionTimeline` below in reverse chronological order (icon per type, timestamp, notes). "Log Interaction" button opens dialog. Commit: `"feat: customer CRM with interaction history and staff filter (tasks 5.1–5.5)"`.
+
+> **⏸ PHASE 5 CHECKPOINT — Stop here. Do not start Phase 6.**
+>
+> - [ ] `pnpm test` — all unit tests pass
+> - [ ] `pnpm test:e2e -- --grep "customers"` — customer E2E tests pass
+> - [ ] **Playwright MCP:** Navigate to `/customers` → create a new customer → confirm it appears in the list → search by name → confirm filter works → click customer → confirm detail page with interaction timeline loads → log an interaction → confirm it appears in timeline
+> - [ ] **⛔ Await user approval** — User manually tests customer list, detail, and interaction logging. Only continue after explicit confirmation.
 
 ---
 
@@ -386,7 +518,16 @@ Use this table to pick the right tool before starting each task. **Skills** are 
   2. `TeamAssignment` — current team list (employees + collaborators) with roles; "Assign" opens a dialog to select from employees/collaborators
   3. `QuotationBuilder` — line items table with editable quantity/price, calculated totals, "Export to Drive" button (calls Google Drive service via tRPC mutation, stores `driveFileId`)
 
+- [ ] **6.6 (Figma Make)** Before building event pages: use Figma MCP `get_design_context` to read the EventCalendar and QuotationBuilder frames from Phase 0. Adapt layout and component usage to our Next.js stack.
+
 - [ ] **6.7** Commit: `"feat: event management with quotation builder, Drive export, state machine (tasks 6.1–6.8)"`.
+
+> **⏸ PHASE 6 CHECKPOINT — Stop here. Do not start Phase 7.**
+>
+> - [ ] `pnpm test` — all unit tests pass
+> - [ ] `pnpm test:e2e -- --grep "events"` — events E2E tests pass
+> - [ ] **Playwright MCP:** Navigate to `/events` → create an event (status PLANNING) → switch to Calendar view → confirm event appears on correct date → open event detail → change status to CONFIRMED → confirm badge updates → try invalid transition → confirm error toast → add quotation line item → confirm totalAmount updates
+> - [ ] **⛔ Await user approval** — User manually tests event list, calendar, status transitions, and quotation builder. Only continue after explicit confirmation.
 
 ---
 
@@ -432,7 +573,14 @@ Use this table to pick the right tool before starting each task. **Skills** are 
 
 - [ ] **7.5** Create `TaskDetailPanel.tsx` as a shadcn Sheet. Full task details, status dropdown, edit mode via `TaskForm`. `TaskForm` fields: title, description, priority, due date, assignee (user select), linked event (event select, optional).
 
-- [ ] **7.6** Build `src/app/(dashboard)/tasks/page.tsx`: `KanbanBoard` with filter bar (assignee select, priority select, event select). "New Task" button opens `TaskDetailPanel` in create mode. Commit: `"feat: kanban task board with drag-and-drop and overdue detection (tasks 7.1–7.7)"`.
+- [ ] **7.6 (Figma Make)** Before building: use Figma MCP `get_design_context` to read the KanbanBoard and TaskCard frames from Phase 0. Pay attention to the priority badge color system and the four-column grid layout. Build `src/app/(dashboard)/tasks/page.tsx`: `KanbanBoard` with filter bar (assignee select, priority select, event select). "New Task" button opens `TaskDetailPanel` in create mode. Commit: `"feat: kanban task board with drag-and-drop and overdue detection (tasks 7.1–7.7)"`.
+
+> **⏸ PHASE 7 CHECKPOINT — Stop here. Do not start Phase 8.**
+>
+> - [ ] `pnpm test` — all unit tests pass
+> - [ ] `pnpm test:e2e -- --grep "tasks"` — task E2E tests pass
+> - [ ] **Playwright MCP:** Navigate to `/tasks` → create a task → confirm it appears in TODO column → drag to IN_PROGRESS → confirm it moves and status badge updates → create a task with past due date → confirm red "Overdue" badge → filter by priority HIGH → confirm only high-priority tasks visible
+> - [ ] **⛔ Await user approval** — User manually tests Kanban drag-and-drop, overdue badge, and filters. Only continue after explicit confirmation.
 
 ---
 
@@ -486,6 +634,13 @@ Use this table to pick the right tool before starting each task. **Skills** are 
 
 - [ ] **8.5** Build `src/app/(dashboard)/timesheets/review/page.tsx` for ADMINs: date filter and user filter at top, table of all timesheets with employee name, date, hours, status. "Approve" button triggers mutation. "Reject" opens dialog with a required reason textarea. `AttendanceSummary` component: employee select + month picker, fetches `getAttendanceSummary`, displays total days / approved hours / rejection count. Commit: `"feat: work schedule and timesheet approval workflow (tasks 8.1–8.7)"`.
 
+> **⏸ PHASE 8 CHECKPOINT — Stop here. Do not start Phase 9.**
+>
+> - [ ] `pnpm test` — all unit tests pass
+> - [ ] `pnpm test:e2e -- --grep "timesheets"` — timesheet E2E tests pass
+> - [ ] **Playwright MCP:** Navigate to `/schedule` → confirm weekly calendar renders → navigate to `/timesheets` as MEMBER → submit today's timesheet → confirm PENDING status → navigate to `/timesheets/review` as ADMIN → approve the submission → confirm status changes to APPROVED → try rejecting without a reason → confirm validation error
+> - [ ] **⛔ Await user approval** — User manually tests schedule view, timesheet submission, and approval/rejection flow. Only continue after explicit confirmation.
+
 ---
 
 ### Phase 9: Cash Flow
@@ -528,6 +683,13 @@ Use this table to pick the right tool before starting each task. **Skills** are 
 - [ ] **9.3** Build `src/app/(dashboard)/cash-flow/page.tsx`: period picker (month/year) at top, `CashFlowSummary` row (3 cards: Total Income / Total Expenses / Net Balance formatted as VND), `CategoryBreakdownChart` (Recharts `BarChart` with two grouped bars: income categories vs expense categories), transaction list with pagination. "Add Transaction" button opens dialog.
 
 - [ ] **9.4** Build `TransactionForm`: type toggle (Income/Expense), amount input (VND format hint), category select (filtered by selected type so only income categories show for INCOME), description, date picker, optional event link. Commit: `"feat: cash flow with VND formatting, period filter, and category breakdown (tasks 9.1–9.6)"`.
+
+> **⏸ PHASE 9 CHECKPOINT — Stop here. Do not start Phase 10.**
+>
+> - [ ] `pnpm test` — all unit tests pass
+> - [ ] `pnpm test:e2e -- --grep "cash-flow"` — cash flow E2E tests pass
+> - [ ] **Playwright MCP:** Navigate to `/cash-flow` → add an INCOME transaction → confirm Total Income card increments → add an EXPENSE → confirm Net Balance updates → try amount of 0 → confirm validation error → change period month/year → confirm summary cards reflect new period
+> - [ ] **⛔ Await user approval** — User manually tests transaction creation, VND formatting, and period filter. Only continue after explicit confirmation.
 
 ---
 
@@ -572,6 +734,13 @@ Use this table to pick the right tool before starting each task. **Skills** are 
 - [ ] **10.4** Build `src/app/(dashboard)/hr/employees/[id]/page.tsx`: employee info card (shows linked system user email if `userId` is set), `ContractList` with start/end dates. Contracts where `endDate` is within 30 days get a yellow ⚠️ warning badge. "Add Contract" button opens dialog.
 
 - [ ] **10.5** Commit: `"feat: HR module with employee, collaborator, contract expiry tracking (tasks 10.1–10.7)"`.
+
+> **⏸ PHASE 10 CHECKPOINT — Stop here. Do not start Phase 11.**
+>
+> - [ ] `pnpm test` — all unit tests pass
+> - [ ] `pnpm test:e2e -- --grep "hr"` — HR E2E tests pass
+> - [ ] **Playwright MCP:** Navigate to `/hr` → add an employee → confirm appears in directory → search by name → confirm filter works → open employee detail → add a contract expiring within 30 days → confirm yellow warning badge → switch to Collaborators tab → add a collaborator → confirm appears in list
+> - [ ] **⛔ Await user approval** — User manually tests employee directory, contract expiry warning, and collaborator management. Only continue after explicit confirmation.
 
 ---
 
@@ -621,6 +790,13 @@ Use this table to pick the right tool before starting each task. **Skills** are 
 
 - [ ] **11.5** Build `src/app/(dashboard)/inventory/checklists/[eventId]/page.tsx`: tabs for "Pre-Event" and "Post-Event" checklists (filtered by `ChecklistType`). Each tab shows its checklist items as checkboxes. Checking an item calls `updateChecklistItem` mutation. Progress bar at top shows `percentage%` complete. "Add Item" button. Commit: `"feat: prop inventory with atomic allocation and typed checklists (tasks 11.1–11.7)"`.
 
+> **⏸ PHASE 11 CHECKPOINT — Stop here. Do not start Phase 12.**
+>
+> - [ ] `pnpm test` — all unit tests pass
+> - [ ] `pnpm test:e2e -- --grep "inventory"` — inventory E2E tests pass
+> - [ ] **Playwright MCP:** Navigate to `/inventory` → add a prop with quantity 5 → confirm green availability badge → allocate 3 units to an event → confirm available drops to 2 → try to allocate 10 units → confirm error message → open event checklist → check a pre-event item → confirm checkbox checked and progress bar increments
+> - [ ] **⛔ Await user approval** — User manually tests prop allocation, over-allocation error, and checklist progress. Only continue after explicit confirmation.
+
 ---
 
 ## Chunk 4: Reports and Final Polish (Phases 12–13)
@@ -659,6 +835,8 @@ Use this table to pick the right tool before starting each task. **Skills** are 
 - Create: `tests/e2e/navigation.spec.ts`
 
 **Steps:**
+
+- [ ] **14.0 (Figma Make)** Before building any layout code: use Figma MCP `get_design_context` to read the Dashboard Shell and Navigation System frames from Phase 0. These define the exact sidebar layout, active states, mobile breakpoints, and UserMenu structure to implement.
 
 - [ ] **14.1** Build `src/app/(dashboard)/layout.tsx` as a **Server Component**. Call `auth()` server-side — if no session, call `redirect('/login')`. Extract `session.user.role`. Pass `role` as a prop to `Sidebar` and `MobileSidebar`. This is how role reaches client components without importing `src/server/` code.
 
@@ -762,7 +940,26 @@ Use this table to pick the right tool before starting each task. **Skills** are 
   - Closing the mobile sidebar hides it
   - Active route is highlighted in the sidebar when navigating between pages
 
-- [ ] **14.6** Run `/verification-before-completion` checklist: `pnpm lint` clean, `pnpm type-check` clean, `pnpm build` succeeds, `pnpm test` all pass, `pnpm test:coverage` shows >80% server-side, `pnpm test:e2e` all pass. Commit only after all six checks pass: `"feat: dashboard shell, sidebar nav, RBAC visibility, E2E tests complete (tasks 14.1–14.5)"`.
+- [ ] **14.6 (Figma Make — Code Connect)** Send Code Connect mappings via Figma MCP `send_code_connect_mappings` to link every implemented component to its Figma Make counterpart. Key mappings:
+  - Figma `Sidebar` → `src/components/layout/Sidebar.tsx`
+  - Figma `MetricCard` → `src/components/dashboard/MetricCard.tsx`
+  - Figma `DataTable` → `src/components/ui/table.tsx`
+  - Figma `StatusBadge` → `src/components/ui/badge.tsx`
+  - Figma `KanbanBoard` → `src/components/tasks/KanbanBoard.tsx`
+  - Figma `TaskCard` → `src/components/tasks/TaskCard.tsx`
+  - Figma `EventCalendar` → `src/components/events/EventCalendar.tsx`
+  - Figma `QuotationBuilder` → `src/components/events/QuotationBuilder.tsx`
+  - Figma `WeeklyCalendar` → `src/components/schedule/WeeklyCalendar.tsx`
+  - Figma `InteractionTimeline` → `src/components/customers/InteractionTimeline.tsx`
+
+- [ ] **14.7** Run `/verification-before-completion` checklist: `pnpm lint` clean, `pnpm type-check` clean, `pnpm build` succeeds, `pnpm test` all pass, `pnpm test:coverage` shows >80% server-side, `pnpm test:e2e` all pass. Commit only after all six checks pass: `"feat: dashboard shell, sidebar nav, RBAC visibility, E2E tests complete (tasks 14.1–14.6)"`.
+
+> **⏸ PHASE 12 CHECKPOINT — Stop here. Do not start Phase 13 (Deploy).**
+>
+> - [ ] `pnpm test` — all unit tests pass
+> - [ ] `pnpm test:e2e` — full E2E suite passes (all spec files)
+> - [ ] **Playwright MCP:** Full navigation walkthrough — sidebar links all work → ADMIN sees "Admin" section, VIEWER does not → mobile viewport (375px) → hamburger opens sheet → active route highlighted → ErrorBoundary renders correctly on error → Suspense skeleton matches loaded layout
+> - [ ] **⛔ Await user approval** — User does a full end-to-end walkthrough of the entire app across all modules. This is the final acceptance test before production deploy. Only continue to Phase 13 after explicit confirmation.
 
 ---
 
@@ -855,6 +1052,10 @@ GOOGLE_SERVICE_ACCOUNT_JSON=    # Full JSON string of GCP service account key
 GOOGLE_DRIVE_FOLDER_ID=         # Google Drive folder ID for quotation uploads
 INNGEST_EVENT_KEY=              # Inngest event key
 INNGEST_SIGNING_KEY=            # Inngest signing key for production
+
+# Figma Make (design system reference — used by Figma MCP in Phase 0 and UI phases)
+FIGMA_MAKE_FILE_KEY=DEFShOWS1OFzBB6czy0A4s
+FIGMA_MAKE_URL=https://www.figma.com/make/DEFShOWS1OFzBB6czy0A4s/HKT-project
 ```
 
 ---
