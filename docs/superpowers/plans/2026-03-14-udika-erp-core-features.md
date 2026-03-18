@@ -288,6 +288,7 @@ After every phase from Phase 3, execution **must stop** for user verification be
 - Create: `src/components/forms/LoginForm.tsx`
 - Create: `src/app/(dashboard)/profile/page.tsx`
 - Create: `src/components/forms/ProfileForm.tsx`
+- Create: `tests/e2e/auth.spec.ts`
 - Modify: `src/server/root.ts` — register auth router
 
 **Steps (TDD order — tests first):**
@@ -321,9 +322,20 @@ After every phase from Phase 3, execution **must stop** for user verification be
 
 - [ ] **3.5** Run `pnpm test` — all auth tests should be GREEN.
 
-- [ ] **3.6** Build `src/app/(auth)/login/page.tsx` and `LoginForm.tsx`. The form uses `react-hook-form` with `loginSchema` (email, password). On submit, calls NextAuth `signIn('credentials', { email, password, redirect: false })`. Show inline error on failure ("Invalid email or password"). On success, call `router.push('/dashboard')`.
+- [ ] **3.6 (Figma Make)** Before building any auth UI: use Figma MCP `get_design_context` to read the **Authentication Shell** frame generated in Phase 0 (fileKey `DEFShOWS1OFzBB6czy0A4s`, node: Auth Shell). This frame defines the centered card layout, logo placeholder position, form field spacing, error state styling, and the Password Change dialog. Adapt the design context to our Next.js App Router stack — Figma Make outputs generic React/Vite which must be converted.
 
-- [ ] **3.7** Build `src/app/(dashboard)/profile/page.tsx` and `ProfileForm.tsx`. Shows current name and email (read-only). Allows name update (calls `api.auth.updateProfile`) and password change (calls `api.auth.changePassword`). Commit: `"feat: NextAuth v5 auth with RBAC tRPC middleware (tasks 3.1–3.6)"`.
+- [ ] **3.7** Build `src/app/(auth)/login/page.tsx` and `LoginForm.tsx` using the Phase 0 Authentication Shell as the visual reference. The form uses `react-hook-form` with `loginSchema` (email, password). On submit, calls NextAuth `signIn('credentials', { email, password, redirect: false })`. Show inline error on failure ("Invalid email or password"). On success, call `router.push('/dashboard')`.
+
+- [ ] **3.8** Build `src/app/(dashboard)/profile/page.tsx` and `ProfileForm.tsx`. Shows current name and email (read-only). Allows name update (calls `api.auth.updateProfile`) and password change (calls `api.auth.changePassword`) — use the Password Change dialog design from the Phase 0 Auth Shell frame.
+
+- [ ] **3.9** Write `tests/e2e/auth.spec.ts`:
+  - Login with valid credentials → URL is `/dashboard`
+  - Login with invalid credentials → page shows error message, URL stays `/login`
+  - Visit `/dashboard` without session → redirected to `/login`
+  - Profile page: update name → new name visible after save
+  - Profile page: change password with wrong current password → inline error shown
+
+  Run `pnpm test:e2e -- --grep "auth"` — all pass. Commit: `"feat: NextAuth v5 auth with RBAC tRPC middleware (tasks 3.1–3.9)"`.
 
 **How to test:** Login with seeded admin works, wrong password shows error, `/dashboard` without session redirects to `/login`, all unit tests pass.
 
@@ -360,6 +372,7 @@ After every phase from Phase 3, execution **must stop** for user verification be
 - Create: `src/components/dashboard/RevenueTrendChart.tsx`
 - Create: `src/components/dashboard/EventBreakdownChart.tsx`
 - Create: `src/hooks/useDashboard.ts`
+- Create: `tests/e2e/dashboard.spec.ts`
 - Modify: `src/server/root.ts`
 
 **Steps:**
@@ -389,7 +402,15 @@ After every phase from Phase 3, execution **must stop** for user verification be
   ```
   Returns `{ metrics, trend, breakdown, isLoading }`.
 
-- [ ] **4.5 (Figma Make)** Before building the page: use Figma MCP `get_design_context` to read the MetricCard, RevenueTrendChart, and EventBreakdownChart frames generated in Phase 0. Adapt the design context to our stack (shadcn Card + Recharts). Then build `src/app/(dashboard)/dashboard/page.tsx`: period picker (month/year selectors at top), MetricCard × 3 (Revenue / Costs / Net Profit), RevenueTrendChart, EventBreakdownChart. Use `Skeleton` components for loading state. Commit: `"feat: dashboard analytics with 30s auto-refresh (tasks 4.1–4.7)"`.
+- [ ] **4.5 (Figma Make)** Before building the page: use Figma MCP `get_design_context` to read the MetricCard, RevenueTrendChart, and EventBreakdownChart frames generated in Phase 0. Adapt the design context to our stack (shadcn Card + Recharts). Then build `src/app/(dashboard)/dashboard/page.tsx`: period picker (month/year selectors at top), MetricCard × 3 (Revenue / Costs / Net Profit), RevenueTrendChart, EventBreakdownChart. Use `Skeleton` components for loading state.
+
+- [ ] **4.6** Write `tests/e2e/dashboard.spec.ts`:
+  - Authenticated user sees dashboard with at least 3 metric cards
+  - Period selector (month/year) updates all three metric cards and both charts
+  - Charts re-fetch every 30s (verify by intercepting network requests and confirming `refetch` fires after 30s)
+  - Empty state: period with no data shows zeros on cards and "No data" overlays on charts
+
+  Run `pnpm test:e2e -- --grep "dashboard"` — all pass. Commit: `"feat: dashboard analytics with 30s auto-refresh (tasks 4.1–4.6)"`.
 
 **How to test:** Dashboard loads, cards show zeros with no data, period selector updates all widgets, network tab shows re-fetches every 30s.
 
@@ -420,6 +441,7 @@ After every phase from Phase 3, execution **must stop** for user verification be
 - Create: `src/app/(dashboard)/customers/[id]/page.tsx`
 - Create: `src/components/customers/CustomerForm.tsx`
 - Create: `src/components/customers/InteractionTimeline.tsx`
+- Create: `tests/e2e/customers.spec.ts`
 - Modify: `src/server/root.ts`
 
 **Steps:**
@@ -440,7 +462,17 @@ After every phase from Phase 3, execution **must stop** for user verification be
 
 - [ ] **5.3** Build `src/app/(dashboard)/customers/page.tsx`: search input (debounced 300ms with `useDebounce` hook), status filter dropdown, assigned-staff filter dropdown (lists users from session-aware query), paginated table (Name, Phone, Company, Status, Created), "Add Customer" button opens dialog with `CustomerForm`.
 
-- [ ] **5.4 (Figma Make)** Before building: use Figma MCP `get_design_context` to read the CustomerList and CustomerDetail frames from Phase 0. Adapt to our stack. Build `src/app/(dashboard)/customers/[id]/page.tsx`: customer info card, `InteractionTimeline` below in reverse chronological order (icon per type, timestamp, notes). "Log Interaction" button opens dialog. Commit: `"feat: customer CRM with interaction history and staff filter (tasks 5.1–5.5)"`.
+- [ ] **5.4 (Figma Make)** Before building: use Figma MCP `get_design_context` to read the CustomerList and CustomerDetail frames from Phase 0. Adapt to our stack. Build `src/app/(dashboard)/customers/[id]/page.tsx`: customer info card, `InteractionTimeline` below in reverse chronological order (icon per type, timestamp, notes). "Log Interaction" button opens dialog.
+
+- [ ] **5.5** Write `tests/e2e/customers.spec.ts`:
+  - Create a customer → appears in list
+  - Search by name → only matching customer visible
+  - Filter by status `ACTIVE` → only active customers shown
+  - Open customer detail page → interaction timeline section visible
+  - Log an interaction → appears in timeline with correct type icon and timestamp
+  - ADMIN can delete a customer; MEMBER cannot see the delete option (button absent)
+
+  Run `pnpm test:e2e -- --grep "customers"` — all pass. Commit: `"feat: customer CRM with interaction history and staff filter (tasks 5.1–5.5)"`.
 
 > **⏸ PHASE 5 CHECKPOINT — Stop here. Do not start Phase 6.**
 >
@@ -476,6 +508,7 @@ After every phase from Phase 3, execution **must stop** for user verification be
 - Create: `src/components/events/EventCalendar.tsx`
 - Create: `src/components/events/QuotationBuilder.tsx`
 - Create: `src/components/events/TeamAssignment.tsx`
+- Create: `tests/e2e/events.spec.ts`
 - Modify: `src/server/root.ts`
 
 **Steps:**
@@ -520,7 +553,18 @@ After every phase from Phase 3, execution **must stop** for user verification be
 
 - [ ] **6.6 (Figma Make)** Before building event pages: use Figma MCP `get_design_context` to read the EventCalendar and QuotationBuilder frames from Phase 0. Adapt layout and component usage to our Next.js stack.
 
-- [ ] **6.7** Commit: `"feat: event management with quotation builder, Drive export, state machine (tasks 6.1–6.8)"`.
+- [ ] **6.7** Write `tests/e2e/events.spec.ts`:
+  - Create an event with status `PLANNING` → appears in event list
+  - Switch to Calendar view → event appears on its date cell
+  - Open event detail → status can be changed `PLANNING → CONFIRMED`
+  - Invalid status transition (try to set `COMPLETED → PLANNING`) → error toast shown, status unchanged
+  - Add a team member → member appears in the team list
+  - Add quotation line item → `totalAmount` updates in the UI
+  - Remove quotation line item → `totalAmount` decrements
+
+  Run `pnpm test:e2e -- --grep "events"` — all pass.
+
+- [ ] **6.8** Commit: `"feat: event management with quotation builder, Drive export, state machine (tasks 6.1–6.8)"`.
 
 > **⏸ PHASE 6 CHECKPOINT — Stop here. Do not start Phase 7.**
 >
@@ -550,6 +594,7 @@ After every phase from Phase 3, execution **must stop** for user verification be
 - Create: `src/components/tasks/TaskCard.tsx`
 - Create: `src/components/tasks/TaskDetailPanel.tsx`
 - Create: `src/components/tasks/TaskForm.tsx`
+- Create: `tests/e2e/tasks.spec.ts`
 - Modify: `src/server/root.ts`
 
 **Steps:**
@@ -573,7 +618,16 @@ After every phase from Phase 3, execution **must stop** for user verification be
 
 - [ ] **7.5** Create `TaskDetailPanel.tsx` as a shadcn Sheet. Full task details, status dropdown, edit mode via `TaskForm`. `TaskForm` fields: title, description, priority, due date, assignee (user select), linked event (event select, optional).
 
-- [ ] **7.6 (Figma Make)** Before building: use Figma MCP `get_design_context` to read the KanbanBoard and TaskCard frames from Phase 0. Pay attention to the priority badge color system and the four-column grid layout. Build `src/app/(dashboard)/tasks/page.tsx`: `KanbanBoard` with filter bar (assignee select, priority select, event select). "New Task" button opens `TaskDetailPanel` in create mode. Commit: `"feat: kanban task board with drag-and-drop and overdue detection (tasks 7.1–7.7)"`.
+- [ ] **7.6 (Figma Make)** Before building: use Figma MCP `get_design_context` to read the KanbanBoard and TaskCard frames from Phase 0. Pay attention to the priority badge color system and the four-column grid layout. Build `src/app/(dashboard)/tasks/page.tsx`: `KanbanBoard` with filter bar (assignee select, priority select, event select). "New Task" button opens `TaskDetailPanel` in create mode.
+
+- [ ] **7.7** Write `tests/e2e/tasks.spec.ts`:
+  - Create a task → appears in the TODO column
+  - Drag task from TODO to IN_PROGRESS column → task moves and status badge updates
+  - Overdue task (dueDate in the past, status not DONE) → red "Overdue" badge visible
+  - Filter by priority `HIGH` → only high-priority tasks visible in all columns
+  - ADMIN can delete a task; MEMBER cannot see the delete option
+
+  Run `pnpm test:e2e -- --grep "tasks"` — all pass. Commit: `"feat: kanban task board with drag-and-drop and overdue detection (tasks 7.1–7.7)"`.
 
 > **⏸ PHASE 7 CHECKPOINT — Stop here. Do not start Phase 8.**
 >
@@ -610,6 +664,7 @@ After every phase from Phase 3, execution **must stop** for user verification be
 - Create: `src/components/schedule/WeeklyCalendar.tsx`
 - Create: `src/components/timesheets/TimesheetForm.tsx`
 - Create: `src/components/timesheets/AttendanceSummary.tsx`
+- Create: `tests/e2e/timesheets.spec.ts`
 - Modify: `src/server/root.ts`
 
 **Steps:**
@@ -632,7 +687,17 @@ After every phase from Phase 3, execution **must stop** for user verification be
 
 - [ ] **8.4** Build `src/app/(dashboard)/schedule/page.tsx` (ADMIN-gated via `adminProcedure` data; MEMBERs see read-only view of their own shifts). Build `src/app/(dashboard)/timesheets/page.tsx` for MEMBERs: their own timesheet list with status badges and `TimesheetForm` to submit today's report. `TimesheetForm` uses `submitTimesheetSchema`, date defaults to today and is read-only.
 
-- [ ] **8.5** Build `src/app/(dashboard)/timesheets/review/page.tsx` for ADMINs: date filter and user filter at top, table of all timesheets with employee name, date, hours, status. "Approve" button triggers mutation. "Reject" opens dialog with a required reason textarea. `AttendanceSummary` component: employee select + month picker, fetches `getAttendanceSummary`, displays total days / approved hours / rejection count. Commit: `"feat: work schedule and timesheet approval workflow (tasks 8.1–8.7)"`.
+- [ ] **8.5** Build `src/app/(dashboard)/timesheets/review/page.tsx` for ADMINs: date filter and user filter at top, table of all timesheets with employee name, date, hours, status. "Approve" button triggers mutation. "Reject" opens dialog with a required reason textarea. `AttendanceSummary` component: employee select + month picker, fetches `getAttendanceSummary`, displays total days / approved hours / rejection count.
+
+- [ ] **8.6** Write `tests/e2e/timesheets.spec.ts`:
+  - MEMBER submits a timesheet for today → entry appears in their list with `PENDING` status
+  - Submitting a second timesheet for the same date → error message shown
+  - ADMIN approves a pending timesheet → status badge changes to `APPROVED`
+  - ADMIN rejects a timesheet with reason → status changes to `REJECTED`, reason stored
+  - Rejecting without a reason → submit button disabled / validation error shown
+  - `AttendanceSummary` for an employee shows correct `approvedHours` after approval
+
+  Run `pnpm test:e2e -- --grep "timesheets"` — all pass. Commit: `"feat: work schedule and timesheet approval workflow (tasks 8.1–8.6)"`.
 
 > **⏸ PHASE 8 CHECKPOINT — Stop here. Do not start Phase 9.**
 >
@@ -663,6 +728,7 @@ After every phase from Phase 3, execution **must stop** for user verification be
 - Create: `src/components/cash-flow/TransactionForm.tsx`
 - Create: `src/components/cash-flow/CashFlowSummary.tsx`
 - Create: `src/components/cash-flow/CategoryBreakdownChart.tsx`
+- Create: `tests/e2e/cash-flow.spec.ts`
 - Modify: `src/server/root.ts`
 
 **Steps:**
@@ -682,7 +748,16 @@ After every phase from Phase 3, execution **must stop** for user verification be
 
 - [ ] **9.3** Build `src/app/(dashboard)/cash-flow/page.tsx`: period picker (month/year) at top, `CashFlowSummary` row (3 cards: Total Income / Total Expenses / Net Balance formatted as VND), `CategoryBreakdownChart` (Recharts `BarChart` with two grouped bars: income categories vs expense categories), transaction list with pagination. "Add Transaction" button opens dialog.
 
-- [ ] **9.4** Build `TransactionForm`: type toggle (Income/Expense), amount input (VND format hint), category select (filtered by selected type so only income categories show for INCOME), description, date picker, optional event link. Commit: `"feat: cash flow with VND formatting, period filter, and category breakdown (tasks 9.1–9.6)"`.
+- [ ] **9.4** Build `TransactionForm`: type toggle (Income/Expense), amount input (VND format hint), category select (filtered by selected type so only income categories show for INCOME), description, date picker, optional event link.
+
+- [ ] **9.5** Write `tests/e2e/cash-flow.spec.ts`:
+  - Add an INCOME transaction → appears in list and `Total Income` card increments
+  - Add an EXPENSE transaction → `Total Expenses` card increments, `Net Balance` updates
+  - Amount of `0` or negative → validation error shown, transaction not created
+  - Filter by `categoryId` → only transactions for that category visible
+  - Period picker change → summary cards reflect the selected month/year
+
+  Run `pnpm test:e2e -- --grep "cash-flow"` — all pass. Commit: `"feat: cash flow with VND formatting, period filter, and category breakdown (tasks 9.1–9.5)"`.
 
 > **⏸ PHASE 9 CHECKPOINT — Stop here. Do not start Phase 10.**
 >
@@ -712,6 +787,7 @@ After every phase from Phase 3, execution **must stop** for user verification be
 - Create: `src/components/hr/EmployeeForm.tsx`
 - Create: `src/components/hr/CollaboratorForm.tsx`
 - Create: `src/components/hr/ContractList.tsx`
+- Create: `tests/e2e/hr.spec.ts`
 - Modify: `src/server/root.ts`
 
 **Steps:**
@@ -733,7 +809,18 @@ After every phase from Phase 3, execution **must stop** for user verification be
 
 - [ ] **10.4** Build `src/app/(dashboard)/hr/employees/[id]/page.tsx`: employee info card (shows linked system user email if `userId` is set), `ContractList` with start/end dates. Contracts where `endDate` is within 30 days get a yellow ⚠️ warning badge. "Add Contract" button opens dialog.
 
-- [ ] **10.5** Commit: `"feat: HR module with employee, collaborator, contract expiry tracking (tasks 10.1–10.7)"`.
+- [ ] **10.5** Write `tests/e2e/hr.spec.ts`:
+  - Add an employee → appears in the employee directory
+  - Search by name → only matching employee shown
+  - Deactivate employee → employee moves to inactive list
+  - Add contract to employee → contract appears in `ContractList`
+  - Contract expiring within 30 days → yellow warning badge visible
+  - Add a collaborator → appears in the collaborators tab
+  - Assign collaborator to an event → success toast shown
+
+  Run `pnpm test:e2e -- --grep "hr"` — all pass.
+
+- [ ] **10.6** Commit: `"feat: HR module with employee, collaborator, contract expiry tracking (tasks 10.1–10.6)"`.
 
 > **⏸ PHASE 10 CHECKPOINT — Stop here. Do not start Phase 11.**
 >
@@ -764,6 +851,7 @@ After every phase from Phase 3, execution **must stop** for user verification be
 - Create: `src/components/inventory/PropForm.tsx`
 - Create: `src/components/inventory/PropAllocationForm.tsx`
 - Create: `src/components/inventory/ChecklistView.tsx`
+- Create: `tests/e2e/inventory.spec.ts`
 - Modify: `src/server/root.ts`
 
 **Steps:**
@@ -788,7 +876,17 @@ After every phase from Phase 3, execution **must stop** for user verification be
 
 - [ ] **11.4** `PropAllocationForm`: event select, quantity input. Below quantity input, show "Available: N" as helper text fetched live. Disable submit and show red helper if entered quantity exceeds available.
 
-- [ ] **11.5** Build `src/app/(dashboard)/inventory/checklists/[eventId]/page.tsx`: tabs for "Pre-Event" and "Post-Event" checklists (filtered by `ChecklistType`). Each tab shows its checklist items as checkboxes. Checking an item calls `updateChecklistItem` mutation. Progress bar at top shows `percentage%` complete. "Add Item" button. Commit: `"feat: prop inventory with atomic allocation and typed checklists (tasks 11.1–11.7)"`.
+- [ ] **11.5** Build `src/app/(dashboard)/inventory/checklists/[eventId]/page.tsx`: tabs for "Pre-Event" and "Post-Event" checklists (filtered by `ChecklistType`). Each tab shows its checklist items as checkboxes. Checking an item calls `updateChecklistItem` mutation. Progress bar at top shows `percentage%` complete. "Add Item" button.
+
+- [ ] **11.6** Write `tests/e2e/inventory.spec.ts`:
+  - Add a prop with quantity 5 → availability badge shows green
+  - Allocate 3 units to an event → available quantity drops to 2
+  - Attempt to allocate 10 units (exceeds available) → error message shown, quantity unchanged
+  - Open event checklist → pre-event and post-event tabs visible
+  - Check a checklist item → checkbox is checked, progress bar increments
+  - All items checked → progress bar shows 100%
+
+  Run `pnpm test:e2e -- --grep "inventory"` — all pass. Commit: `"feat: prop inventory with atomic allocation and typed checklists (tasks 11.1–11.6)"`.
 
 > **⏸ PHASE 11 CHECKPOINT — Stop here. Do not start Phase 12.**
 >
@@ -822,15 +920,6 @@ After every phase from Phase 3, execution **must stop** for user verification be
 - Create: `src/components/layout/UserMenu.tsx`
 - Create: `src/components/shared/LoadingSpinner.tsx`
 - Create: `src/components/shared/ErrorBoundary.tsx`
-- Create: `tests/e2e/auth.spec.ts`
-- Create: `tests/e2e/dashboard.spec.ts`
-- Create: `tests/e2e/customers.spec.ts`
-- Create: `tests/e2e/events.spec.ts`
-- Create: `tests/e2e/tasks.spec.ts`
-- Create: `tests/e2e/timesheets.spec.ts`
-- Create: `tests/e2e/cash-flow.spec.ts`
-- Create: `tests/e2e/hr.spec.ts`
-- Create: `tests/e2e/inventory.spec.ts`
 - Create: `tests/e2e/rbac.spec.ts`
 - Create: `tests/e2e/navigation.spec.ts`
 
@@ -855,76 +944,7 @@ After every phase from Phase 3, execution **must stop** for user verification be
 
 - [ ] **14.4** Create `LoadingSpinner.tsx` (centered Tailwind animate-spin circle). Wrap every page-level data fetch with `<Suspense fallback={<LoadingSpinner />}>`. Create `ErrorBoundary.tsx` using React's class-based ErrorBoundary. It catches thrown errors and renders a user-friendly card: "Something went wrong. Please refresh the page." — never exposes stack traces or tRPC error codes to the UI.
 
-- [ ] **14.5** Write Playwright E2E tests:
-
-  `auth.spec.ts`:
-  - Login with valid credentials → URL is `/dashboard`
-  - Login with invalid credentials → page shows error message, URL stays `/login`
-  - Visit `/dashboard` without session → redirected to `/login`
-  - Profile page: update name → new name visible after save
-  - Profile page: change password with wrong current password → inline error shown
-
-  `dashboard.spec.ts`:
-  - Authenticated user sees dashboard with at least 3 metric cards
-  - Period selector (month/year) updates all three metric cards and both charts
-  - Charts re-fetch every 30s (verify by intercepting network requests and confirming `refetch` fires after 30s)
-  - Empty state: period with no data shows zeros on cards and "No data" overlays on charts
-
-  `customers.spec.ts`:
-  - Create a customer → appears in list
-  - Search by name → only matching customer visible
-  - Filter by status `ACTIVE` → only active customers shown
-  - Open customer detail page → interaction timeline section visible
-  - Log an interaction → appears in timeline with correct type icon and timestamp
-  - ADMIN can delete a customer; MEMBER cannot see the delete option (button absent)
-
-  `events.spec.ts`:
-  - Create an event with status `PLANNING` → appears in event list
-  - Switch to Calendar view → event appears on its date cell
-  - Open event detail → status can be changed `PLANNING → CONFIRMED`
-  - Invalid status transition (try to set `COMPLETED → PLANNING`) → error toast shown, status unchanged
-  - Add a team member → member appears in the team list
-  - Add quotation line item → `totalAmount` updates in the UI
-  - Remove quotation line item → `totalAmount` decrements
-
-  `tasks.spec.ts`:
-  - Create a task → appears in the TODO column
-  - Drag task from TODO to IN_PROGRESS column → task moves and status badge updates
-  - Overdue task (dueDate in the past, status not DONE) → red "Overdue" badge visible
-  - Filter by priority `HIGH` → only high-priority tasks visible in all columns
-  - ADMIN can delete a task; MEMBER cannot see the delete option
-
-  `timesheets.spec.ts`:
-  - MEMBER submits a timesheet for today → entry appears in their list with `PENDING` status
-  - Submitting a second timesheet for the same date → error message shown
-  - ADMIN approves a pending timesheet → status badge changes to `APPROVED`
-  - ADMIN rejects a timesheet with reason → status changes to `REJECTED`, reason stored
-  - Rejecting without a reason → submit button disabled / validation error shown
-  - `AttendanceSummary` for an employee shows correct `approvedHours` after approval
-
-  `cash-flow.spec.ts`:
-  - Add an INCOME transaction → appears in list and `Total Income` card increments
-  - Add an EXPENSE transaction → `Total Expenses` card increments, `Net Balance` updates
-  - Amount of `0` or negative → validation error shown, transaction not created
-  - Filter by `categoryId` → only transactions for that category visible
-  - Period picker change → summary cards reflect the selected month/year
-
-  `hr.spec.ts`:
-  - Add an employee → appears in the employee directory
-  - Search by name → only matching employee shown
-  - Deactivate employee → employee moves to inactive list
-  - Add contract to employee → contract appears in `ContractList`
-  - Contract expiring within 30 days → yellow warning badge visible
-  - Add a collaborator → appears in the collaborators tab
-  - Assign collaborator to an event → success toast shown
-
-  `inventory.spec.ts`:
-  - Add a prop with quantity 5 → availability badge shows green
-  - Allocate 3 units to an event → available quantity drops to 2
-  - Attempt to allocate 10 units (exceeds available) → error message shown, quantity unchanged
-  - Open event checklist → pre-event and post-event tabs visible
-  - Check a checklist item → checkbox is checked, progress bar increments
-  - All items checked → progress bar shows 100%
+- [ ] **14.5** Write remaining cross-cutting Playwright E2E tests (phase-specific specs were written during their respective phases):
 
   `rbac.spec.ts`:
   - VIEWER cannot access the "Delete" action on customers, events, or tasks
